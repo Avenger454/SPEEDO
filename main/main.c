@@ -559,16 +559,23 @@ void tach_set_rpm(int rpm){
 void gauge_timer(lv_timer_t * t) {
     (void)t;
 #if GAUGE_DEMO_MODE
+    // Demo alternates pages every 30 seconds; production always starts MAIN.
+    const int64_t demo_ms = esp_timer_get_time() / 1000;
+    ui_speedo_set_page((demo_ms / 30000) % 2 ? UI_SPEEDO_PAGE_BOOST : UI_SPEEDO_PAGE_MAIN);
     // Same slow 30-second sweep as the validated TACH, now 0..80 MPH.
     const uint32_t phase_ms = (uint32_t)((esp_timer_get_time() / 1000) % 30000);
     const uint32_t ramp_ms = phase_ms <= 15000 ? phase_ms : 30000 - phase_ms;
     ui_speedo_set_speed((int)(ramp_ms * (80.0f / 15000.0f) + 0.5f));
+    // Sweep -20 inHg vacuum to +20 PSI boost and back, using gauge PSI input.
+    float pressure_scale = -20.0f + ramp_ms * (40.0f / 15000.0f);
+    ui_speedo_set_pressure(pressure_scale < 0 ? pressure_scale / 2.03602f : pressure_scale);
     // Display-only examples: never add demo distance to the saved odometer.
     ui_speedo_set_distances(123.4, 4532.0);
 #else
     float speed = g_speed_mph;
     if(!isfinite(speed) || speed < GPS_MIN_VALID_MPH) speed = 0;
     ui_speedo_set_speed((int)(speed + 0.5f));
+    ui_speedo_set_pressure(g_gauge_data.boost_psi);
     double miles = odometer_get_miles();
     static double trip_start = -1;
     if(trip_start < 0) trip_start = miles;

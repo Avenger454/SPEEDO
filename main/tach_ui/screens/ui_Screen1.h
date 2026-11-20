@@ -26,6 +26,14 @@ extern lv_obj_t *ui_label_odometer_value;
 void ui_tach_set_rpm(int rpm);
 void ui_tach_set_gear(int gear);
 
+typedef enum {
+    UI_SPEEDO_PAGE_MAIN = 0,
+    UI_SPEEDO_PAGE_BOOST = 1
+} ui_speedo_page_t;
+
+/* Page and value setters must be called from LVGL context. */
+void ui_speedo_set_page(ui_speedo_page_t page);
+void ui_speedo_set_pressure(float gauge_psi);
 void ui_speedo_set_speed(int mph);
 void ui_speedo_set_distances(double trip_miles, double odo_miles);
 
@@ -36,5 +44,6 @@ void ui_speedo_set_distances(double trip_miles, double odo_miles);
 #endif
 
 #endif
+
 
 

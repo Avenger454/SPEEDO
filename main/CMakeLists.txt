@@ -86,7 +86,7 @@ idf_component_register(
         "./canbus"
         "."
 
-    EMBED_FILES "tach_ui/images/speedo_face.rgb565"
+    EMBED_FILES "tach_ui/images/speedo_face.rgb565" "tach_ui/images/boost_face.rgb565"
 
     EMBED_TXTFILES
         ${CAN_PROTOCOL_JSON}
@@ -96,3 +96,4 @@ target_link_libraries(${COMPONENT_LIB} INTERFACE
     "-Wl,--wrap=esp_lcd_new_dsi_bus"
     "-Wl,--undefined=__wrap_esp_lcd_new_dsi_bus"
 )
+
