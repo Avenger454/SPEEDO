@@ -145,20 +145,24 @@ static void create_boost_scale(void)
         lv_obj_clear_flag(line, LV_OBJ_FLAG_CLICKABLE);
         if(major) {
             lv_obj_t *label = value_label(render_root, &speedo_text_28);
+            /* Coordinates below are absolute within the page, not offsets
+             * from the center alignment used by value_label(). */
+            lv_obj_set_align(label, LV_ALIGN_TOP_LEFT);
             lv_label_set_text_fmt(label, "%d", value);
             lv_obj_update_layout(label);
             lv_obj_set_pos(label,
                 (lv_coord_t)lroundf(360 + 288 * x) - lv_obj_get_width(label) / 2,
-                (lv_coord_t)lroundf(360 + 288 * y) - lv_obj_get_height(label) / 2);
+                (lv_coord_t)lroundf(360 + 288 * y) - lv_obj_get_height(label) / 2 -
+                    ((tick == 0 || tick == 40) ? 18 : 0));
         }
     }
     /* Replace the reference's ambiguous units with separate VAC/BOOST units. */
-    lv_obj_t *vac = value_label(black_panel(14, 368, 145, 72), &speedo_text_28);
+    lv_obj_t *vac = value_label(black_panel(14, 360, 145, 80), &speedo_text_28);
     lv_label_set_text(vac, "VAC\ninHg");
     lv_obj_set_style_text_align(vac, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_style_text_color(vac, lv_color_hex(0x00BFFF), 0);
     lv_obj_center(vac);
-    lv_obj_t *boost = value_label(black_panel(558, 368, 150, 72), &speedo_text_28);
+    lv_obj_t *boost = value_label(black_panel(558, 360, 150, 80), &speedo_text_28);
     lv_label_set_text(boost, "BOOST\nPSI");
     lv_obj_set_style_text_align(boost, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_style_text_color(boost, lv_color_hex(0xFF0000), 0);
@@ -179,7 +183,7 @@ static void build_page(ui_speedo_page_t page)
     lv_img_set_zoom(widgets->background, 425);
     if(page == UI_SPEEDO_PAGE_MAIN) create_speed_scale();
     else create_boost_scale();
-    widgets->speed = value_label(black_panel(225, 309, 275, 125), &speedo_digits_170);
+    widgets->speed = value_label(black_panel(225, 300, 275, 134), &speedo_digits_170);
     if(page == UI_SPEEDO_PAGE_MAIN) {
         widgets->trip = value_label(black_panel(201, 539, 128, 40), &speedo_text_28);
         widgets->odo = value_label(black_panel(385, 539, 155, 40), &speedo_text_28);
