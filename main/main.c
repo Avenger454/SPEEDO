@@ -557,66 +557,24 @@ void tach_set_rpm(int rpm){
 
 
 void gauge_timer(lv_timer_t * t) {
+    (void)t;
 #if GAUGE_DEMO_MODE
-    // 30-second triangular sweep: 15 seconds up, 15 seconds down.
-    // Runs in the existing LVGL timer; no extra task or hardware required.
+    // Same slow 30-second sweep as the validated TACH, now 0..80 MPH.
     const uint32_t phase_ms = (uint32_t)((esp_timer_get_time() / 1000) % 30000);
-    const uint32_t ramp_ms = (phase_ms <= 15000) ? phase_ms : (30000 - phase_ms);
-    rpmNow = (float)ramp_ms * (6500.0f / 15000.0f);
-#endif
-
-    static float displayRPM = 0.0f;
-    displayRPM += 0.20f * (rpmNow - displayRPM);
-
-    tach_set_rpm(displayRPM);
-
-    double miles = odometer_get_miles();
-    char odo_buf[16];
-    snprintf(odo_buf, sizeof(odo_buf), "%06.1f", miles);
-    update_label_if_needed(ui_label_odometer_value, odo_buf, green_color);
-
-
-    // Demo gears are display tests, not inferred transmission state.
-#if GAUGE_DEMO_MODE
-    ui_tach_set_gear(1 + (int)((esp_timer_get_time() / 3000000LL) % 8));
+    const uint32_t ramp_ms = phase_ms <= 15000 ? phase_ms : 30000 - phase_ms;
+    ui_speedo_set_speed((int)(ramp_ms * (80.0f / 15000.0f) + 0.5f));
+    // Display-only examples: never add demo distance to the saved odometer.
+    ui_speedo_set_distances(123.4, 4532.0);
 #else
-    // Feed verified transmission gear here when its protocol is integrated.
-    ui_tach_set_gear(-1);
+    float speed = g_speed_mph;
+    if(!isfinite(speed) || speed < GPS_MIN_VALID_MPH) speed = 0;
+    ui_speedo_set_speed((int)(speed + 0.5f));
+    double miles = odometer_get_miles();
+    static double trip_start = -1;
+    if(trip_start < 0) trip_start = miles;
+    ui_speedo_set_distances(miles - trip_start, miles);
 #endif
-
-    if (SENSOR_SOURCE == SENSOR_SOURCE_CAN){
-        float speed_mph = g_speed_mph;
-
-        if (speed_mph < GPS_MIN_VALID_MPH)
-            speed_mph = 0.0f;
-
-        int speed = (int)speed_mph;
-        static char buf[8];
-        snprintf(buf, sizeof(buf), "%d", speed);
-        lv_label_set_text(ui_label_mph_value, buf);
-
-        char afr_buf[12];
-        snprintf(afr_buf, sizeof(afr_buf), "%4.1f", g_gauge_data.afr);
-
-        char boost_buf[12];
-        snprintf(boost_buf, sizeof(boost_buf), "%4.1f", g_gauge_data.boost_psi);
-
-
-        char fuel_comp_buf[12];
-        snprintf(fuel_comp_buf, sizeof(fuel_comp_buf), "%4.1f", g_gauge_data.fuel_comp);
-        //***Update afr and boost and fuel_comp labels here, 
-        // example -> update_label_if_needed(ui_label_odometer_value, odo_buf, green_color);
-        // update_label_if_needed();
-        // update_label_if_needed();
-    
-    }
-
-
 }
-
-//------------------------------------------------------------------------//
-
-
 
 float resistance_to_F(float R) {
     if (R >= sensorR[0]) return tempF[0];
@@ -667,38 +625,6 @@ static uint16_t crc16_ccitt(const uint8_t *data, uint16_t len)
 
 //---------------------------------GPS------------------------//
 
-static void speed_update_cb(void *arg){
-    lv_obj_t *label = (lv_obj_t *)arg;
-    static bool last_fix = true;
-    static int last_speed = -1;
-
-    bool has_fix = gps_has_fix();
-
-    if (!has_fix) {
-        if (last_fix) {
-            lv_label_set_text(label, "--");
-            last_fix = false;
-        }
-        return;
-    }
-
-    float speed_mph = g_speed_mph;
-
-    if (speed_mph < GPS_MIN_VALID_MPH)
-        speed_mph = 0.0f;
-
-    int speed = (int)speed_mph;
-
-    if (!last_fix || speed != last_speed) {
-        static char buf[8];
-        snprintf(buf, sizeof(buf), "%d", speed);
-        lv_label_set_text(label, buf);
-
-        last_speed = speed;
-        last_fix = true;
-    }
-}
-
 void save_miles_task(void *arg){
     while (1){
         odometer_periodic_save();
@@ -731,7 +657,7 @@ void gps_task(void *arg) {
             int speed_int = (int)new_speed;
 
             if (speed_int != last_speed) {
-                lv_async_call(speed_update_cb, ui_label_mph_value);
+                /* gauge_timer reads g_speed_mph in LVGL context. */
                 last_speed = speed_int;
             }
             if (sats_used >= 5 && hdop < 3.5f && gps_location_updated()){
@@ -771,7 +697,7 @@ void gps_task(void *arg) {
 
         } else {
             g_speed_mph = 0;                
-            lv_async_call(speed_update_cb, ui_label_mph_value);
+            /* gauge_timer reads g_speed_mph in LVGL context. */
         }
         #if ENABLE_LOGS
             ESP_LOGI(TAG_GPS,
@@ -1202,4 +1128,3 @@ void app_main(void) {
     bsp_display_brightness_set(50); 
 
 }
-

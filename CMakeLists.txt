@@ -8,4 +8,4 @@ set(EXTRA_COMPONENT_DIRS
     )
 
 add_compile_options(-Wno-format)
-project(center-cluster-esp32-p4)
+project(SPEEDO)

@@ -63,6 +63,8 @@ idf_component_register(
         "tach_ui/ui.c"
         "tach_ui/screens/ui_Screen1.c"
         "tach_ui/fonts/tach_digits.c"
+        "tach_ui/fonts/speedo_digits_170.c"
+        "tach_ui/fonts/speedo_text_28.c"
         "tach_ui/images/ui_img_1656279599.c"
         "tach_ui/fonts/ui_font_DotoLarge.c"
         "tach_ui/fonts/ui_font_Doto_48.c"
@@ -84,16 +86,12 @@ idf_component_register(
         "./canbus"
         "."
 
-    EMBED_FILES "tach_ui/images/tach_face.rgb565"
+    EMBED_FILES "tach_ui/images/speedo_face.rgb565"
 
     EMBED_TXTFILES
         ${CAN_PROTOCOL_JSON}
 )
 
-# Normalize the old Waveshare BSP default before ESP-IDF configures the PHY.
-# Link wrapping also covers calls originating in managed component archives.
-# Force extraction of the wrapper from libmain.a before the BSP introduces
-# its wrapped reference; archive order otherwise leaves the symbol unresolved.
 target_link_libraries(${COMPONENT_LIB} INTERFACE
     "-Wl,--wrap=esp_lcd_new_dsi_bus"
     "-Wl,--undefined=__wrap_esp_lcd_new_dsi_bus"

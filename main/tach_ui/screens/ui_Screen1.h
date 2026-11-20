@@ -26,6 +26,9 @@ extern lv_obj_t *ui_label_odometer_value;
 void ui_tach_set_rpm(int rpm);
 void ui_tach_set_gear(int gear);
 
+void ui_speedo_set_speed(int mph);
+void ui_speedo_set_distances(double trip_miles, double odo_miles);
+
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus
